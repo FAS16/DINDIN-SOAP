@@ -1,10 +1,10 @@
 package soap_server;
 
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 
 import javax.jws.WebService;
 import javax.ws.rs.client.Client;
@@ -15,13 +15,18 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
+
 import model.Credentials;
 
 @WebService(endpointInterface = "soap_server.LogicI")
-public class Logic implements LogicI {
+public class Logic 
+{
 
-	public boolean login(String username, String password) throws Exception {
-		
+	private static final String AUTHORIZATION_HEADER_PREFIX = "Bearer ";
+
+	public String login(String username, String password) throws Exception {
+
 		Credentials creds = new Credentials();
 		creds.setUsername(username);
 		creds.setPassword(password);
@@ -31,99 +36,116 @@ public class Logic implements LogicI {
 		WebTarget target = client.target("http://localhost:8080/dindin/webapi/login");
 		Entity<String> data = Entity.entity(json, MediaType.APPLICATION_JSON);
 		Response response = target.request(MediaType.APPLICATION_JSON).post(data);
-		
-		
+		String authHeader = response.getHeaderString("Authorization");
+
 		if (response.getStatus() == Status.OK.getStatusCode()) {
-//			String result = response.readEntity(String.class);
-//			JSONObject o = new JSONObject(result);
-//			String name = o.getString("fornavn");
-			
-			return true;
-			
-		} else  {
-			return false;
+			String token = authHeader.replaceFirst("Bearer ", "");
+
+			return token;
+
+		} else {
+			return null;
 		}
-	
 	}
 
-	@Override
-	public Object getUsers(String adminUsername, String password) {
+	
+	public Object getUsers(String token) {
+
 		Client client = ClientBuilder.newClient();
 		WebTarget baseTarget = client.target("http://localhost:8080/dindin/webapi/");
 		WebTarget usersTarget = baseTarget.path("users");
-		String users = usersTarget.request(MediaType.APPLICATION_JSON).get(String.class);
+		String users = usersTarget.request(MediaType.APPLICATION_JSON)
+				.header("Authorization", AUTHORIZATION_HEADER_PREFIX + token).get(String.class);
 
 		return users;
 	}
 
-	@Override
-	public Object getSpecificUser(String adminUsername, String password, int userId) throws JSONException {
+	
+	public Object getSpecificUser(int userId, String token) throws JSONException {
 
 		Client client = ClientBuilder.newClient();
 
 		WebTarget baseTarget = client.target("http://localhost:8080/dindin/webapi/");
 		WebTarget usersTarget = baseTarget.path("users");
 		WebTarget singeUserTarget = usersTarget.path("{userId}"); // Placeholder for user
-		Response response = singeUserTarget.resolveTemplate("userId", userId).request().get();
+		Response response = singeUserTarget.resolveTemplate("userId", userId).request()/*.header("Authorization", AUTHORIZATION_HEADER_PREFIX + token)*/.get();
 		String result = response.readEntity(String.class);
-		JSONObject o = new JSONObject(result);
+		
 
-		if (response.getStatus() == Status.NOT_FOUND.getStatusCode()) {
-			int errorCode = o.getInt("errorCode");
-			String errorMessage = o.getString("errorMessage");
-			return "FEJL - BRUGER FINDES IKKE\n" + "Fejlkode: " + errorCode + "\nFejlbesked: " + errorMessage;
-			
-		} else if (response.getStatus() == Status.SERVICE_UNAVAILABLE.getStatusCode()) {
-			return "Fejl, prøv igen senere.";
-		}
-
-		else {
+		if (response.getStatus() == Status.OK.getStatusCode()) {
+			JSONObject o = new JSONObject(result);
 			int id = o.getInt("id");
 			String email = o.getString("email");
 			String username = o.getString("userName");
 			String firstName = o.getString("firstName");
 			String lastName = o.getString("lastName");
-			
+
 			return "BRUGER FUNDET\n" + "ID: " + id + "\nE-MAIL: " + email + "\nBrugernavn: " + username + "\nFornavn: "
 					+ firstName + "\nEfternavn: " + lastName;
 		}
 
+		else if (response.getStatus() == Status.NOT_FOUND.getStatusCode()) {
+			JSONObject o = new JSONObject(result);
+			int errorCode = o.getInt("errorCode");
+			String errorMessage = o.getString("errorMessage");
+			return "FEJL - BRUGER FINDES IKKE\n" + "Fejlkode: " + errorCode + "\nFejlbesked: " + errorMessage;
+
+		} else {
+			return "Fejl, prøv igen senere.";
+		}
+
+		
 	}
 
-	@Override
-	public Object getRestaurants(String adminUsername, String password) {
+	
+	public Object getRestaurants(String token) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
-	public Object deleteUser(String adminUsername, String password, int restaurantId) {
+	
+	public Object deleteUser(int userId, String token) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
-	public Object addUser(String adminUsername, String password) {
+	
+	public Object addUser(String token) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
-	public Object getSpecificRestaurant(String adminUsername, String password, int restaurantId) {
+	
+	public Object getSpecificRestaurant(int restaurantId, String token) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
-	public Object deleteRestaurant(String adminUsername, String password, int restaurantId) {
+
+	public Object deleteRestaurant(int restaurantId, String token) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
-	public Object addRestaurant(String adminUsername, String password) {
+	
+	public Object addRestaurant(String token) {
 		// TODO Auto-generated method stub
+		return null;
+	}
+
+	
+	public Object getNumOfUsers(String token) throws JSONException {	
+		JsonArray array = new Gson().fromJson((String) getUsers(token), JsonArray.class);
+		
+		
+		return array.size();
+	}
+
+
+	public Object getUsersLikes(String token) {
+		
 		return null;
 	}
 
 }
+

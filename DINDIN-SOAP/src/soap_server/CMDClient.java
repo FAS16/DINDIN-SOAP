@@ -1,29 +1,27 @@
 package soap_server;
 
 import java.net.MalformedURLException;
-import javax.ws.rs.core.Response.Status;
 import java.net.URL;
 import java.util.Scanner;
-
-import javax.ws.rs.core.Response;
 import javax.xml.namespace.QName;
 import javax.xml.ws.Service;
 
 import org.json.JSONException;
 
+
+
 public class CMDClient {
 
-	private static final String URL = "";
-
 	public static void main(String[] args) throws MalformedURLException, JSONException {
-
+		final String URL = "http://130.225.170.248:9901/dindinadmin?wsdl";
 		URL url = new URL("http://localhost:9901/dindinadmin?wsdl");
+		//URL url = new URL(URL);
 		QName qname = new QName("http://soap_server/", "LogicService");
 		Service service = Service.create(url, qname);
 		LogicI logic = service.getPort(LogicI.class);
 
 		boolean userAuthenticated = false;
-		String adminUsername, password;
+		String adminUsername, password, token = null;
 		Scanner scan = new Scanner(System.in);
 
 		System.out.println("Velkommen til dindins admin-klient \nlog ind for at administrere:");
@@ -34,13 +32,14 @@ public class CMDClient {
 			password = scan.nextLine();
 
 			try {
-				if (logic.login(adminUsername, password)) {
+				token = logic.login(adminUsername, password);
+				if (token != null) {
 					userAuthenticated = true;
 					System.out.println("Logget ind");
-				}
+				} else
+					System.out.println("Forkert brugernavn og/eller adgangskode, prøv igen!\n");
 
 			} catch (Exception e) {
-				System.out.println("Fejl ved log ind, prøv igen!\n");
 				e.printStackTrace();
 
 			}
@@ -51,10 +50,18 @@ public class CMDClient {
 
 			int choice;
 			System.out.println("________________________________");
-			System.out.println("\nTryk 1 for at se antal brugere i databasen");
+			System.out.println("\nTryk 1 for at se alle brugere i databasen");
 			System.out.println("Tryk 2 for at søge efter en bruger databasen");
-			System.out.println("Tryk 3 for at se antal restauranter i databasen");
-			System.out.println("Tryk 4 for at afslutte");
+			System.out.println("Tryk 3 for at få antal tilmeldte brugere fra databasen");
+			System.out.println("Tryk 4 for at en specifik brugeres likes");
+			System.out.println("Tryk 5 for at slette en bruger");
+
+			System.out.println("Tryk 6 for at se alle restauranter i databasen");
+			System.out.println("Tryk 7 for at søge efter en restaurant i databasen");
+			System.out.println("Tryk 8 for at få antal tilmeldte restauranter fra databasen");
+			System.out.println("Tryk 9 for at søge efter restauranter i et bestemt postnummer");
+			System.out.println("Tryk 10 for at slette en restaurant");
+			System.out.println("Tryk 11 for at afslutte");
 
 			if (scan.hasNextInt()) {
 				choice = scan.nextInt();
@@ -67,14 +74,14 @@ public class CMDClient {
 
 			switch (choice) {
 			case 1:
-				System.out.println(logic.getUsers("bliver måske", "brugt til authentication på rest-serveren?"));
+				System.out.println(logic.getUsers(token));
 				break;
 
 			case 2:
 				whileLoop: while (true) {
 					int userId;
-					System.out.println("Indtast brugerens id:"); // Lav for mail istedet
-					if (scan.hasNextInt()) {
+					System.out.println("Indtast brugernavn:");
+					if (scan.hasNextLine()) {
 						userId = scan.nextInt();
 						scan.nextLine();
 					} else {
@@ -82,13 +89,17 @@ public class CMDClient {
 						scan.nextLine();
 						continue whileLoop;
 					}
-					System.out.println(logic.getSpecificUser("", "", userId));
+					System.out.println(logic.getSpecificUser(userId, token));
 					break whileLoop;
 				}
 
 				break;
 
-			case 4:
+			case 3:
+				System.out.println("Antal tilmeldte brugere: " + logic.getNumOfUsers(token));
+				break;
+
+			case 5:
 				System.out.println("\nProgrammet afsluttes...");
 				scan.close();
 				System.exit(0);

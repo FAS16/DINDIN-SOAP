@@ -36,5 +36,9 @@
 	<classpathentry kind="lib" path="/Users/fahadali/Downloads/jaxrs-ri/lib/jersey-common.jar"/>
 	<classpathentry kind="lib" path="/Users/fahadali/Downloads/java-json.jar"/>
 	<classpathentry kind="lib" path="/Users/fahadali/Downloads/gson-2.7.jar"/>
+	<classpathentry kind="lib" path="/Users/fahadali/Downloads/jar_files (1)/jackson-annotations-2.8.0.jar"/>
+	<classpathentry kind="lib" path="/Users/fahadali/Downloads/jar_files (1)/jackson-core-2.8.9.jar"/>
+	<classpathentry kind="lib" path="/Users/fahadali/Downloads/jar_files (1)/jackson-databind-2.8.9.jar"/>
+	<classpathentry kind="lib" path="/Users/fahadali/Downloads/jar_files (1)/jjwt-0.9.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
