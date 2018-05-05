@@ -20,7 +20,7 @@ import javax.ws.rs.core.Response.Status;
 import model.Credentials;
 
 @WebService(endpointInterface = "soap_server.LogicI")
-public class Logic 
+public class Logic implements LogicI
 {
 
 	private static final String AUTHORIZATION_HEADER_PREFIX = "Bearer ";
@@ -76,7 +76,7 @@ public class Logic
 			JSONObject o = new JSONObject(result);
 			int id = o.getInt("id");
 			String email = o.getString("email");
-			String username = o.getString("userName");
+			String username = o.getString("username");
 			String firstName = o.getString("firstName");
 			String lastName = o.getString("lastName");
 
@@ -97,55 +97,130 @@ public class Logic
 		
 	}
 
-	
-	public Object getRestaurants(String token) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	
-	public Object deleteUser(int userId, String token) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	
-	public Object addUser(String token) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	
-	public Object getSpecificRestaurant(int restaurantId, String token) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 
-	public Object deleteRestaurant(int restaurantId, String token) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	
-	public Object addRestaurant(String token) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	
-	public Object getNumOfUsers(String token) throws JSONException {	
+	@Override
+	public Object getNumOfUsers(String token) throws JSONException {
 		JsonArray array = new Gson().fromJson((String) getUsers(token), JsonArray.class);
-		
-		
 		return array.size();
 	}
 
 
-	public Object getUsersLikes(String token) {
+
+	@Override
+	public Object deleteUser(int userId, String token) {
+		Client client = ClientBuilder.newClient();
+		WebTarget baseTarget = client.target("http://localhost:8080/dindin/webapi/");
+		WebTarget usersTarget = baseTarget.path("users");
+		WebTarget singeUserTarget = usersTarget.path("{userId}"); 
+		Response response = singeUserTarget.resolveTemplate("userId", userId).request()/*.header("Authorization", AUTHORIZATION_HEADER_PREFIX + token)*/.delete();
 		
-		return null;
+		if (response.getStatus() == Status.NO_CONTENT.getStatusCode()) {
+			return "Bruger med id "+userId+" er slettet.";
+		} else {
+			return "Fejl ved sletning!";
+		}
 	}
 
+
+	@Override
+	public Object getRestaurants(String token) {
+		Client client = ClientBuilder.newClient();
+		WebTarget baseTarget = client.target("http://localhost:8080/dindin/webapi/");
+		WebTarget restaurantsTarget = baseTarget.path("restaurants");
+		String restaurants = restaurantsTarget.request(MediaType.APPLICATION_JSON)
+				.header("Authorization", AUTHORIZATION_HEADER_PREFIX + token).get(String.class);
+
+		return restaurants;
+	}
+
+
+	@Override
+	public Object getSpecificRestaurant(int restaurantId, String token) throws JSONException {
+
+		Client client = ClientBuilder.newClient();
+
+		WebTarget baseTarget = client.target("http://localhost:8080/dindin/webapi/");
+		WebTarget restaurantsTarget = baseTarget.path("restaurants");
+		WebTarget singeRestTarget = restaurantsTarget.path("{userId}"); // Placeholder for user
+		Response response = singeRestTarget.resolveTemplate("userId", restaurantId).request()/*.header("Authorization", AUTHORIZATION_HEADER_PREFIX + token)*/.get();
+		String result = response.readEntity(String.class);
+		
+
+		if (response.getStatus() == Status.OK.getStatusCode()) {
+			JSONObject o = new JSONObject(result);
+			int id = o.getInt("id");
+			String name = o.getString("name");
+			int zipcode = o.getInt("zipcode");
+			String cuisine = o.getString("cuisine");
+
+			return "RESTAURANT FUNDET\n" + "ID: " + id + "\nNAVN: " + name + "\nPOSTNUMMER: " + zipcode + "\nKØKKEN: "
+					+ cuisine;
+		}
+
+		else if (response.getStatus() == Status.NOT_FOUND.getStatusCode()) {
+			JSONObject o = new JSONObject(result);
+			return "FEJL - RESTAURANTS FINDES IKKE: 404";
+
+		} else {
+			return "Fejl, prøv igen senere.";
+		}
+	}
+
+
+	@Override
+	public Object getNumOfRestaurants(String token) throws JSONException {
+		JsonArray array = new Gson().fromJson((String) getRestaurants(token), JsonArray.class);
+		return array.size();
+	}
+
+
+	@Override
+	public Object addRestaurant(String name, int zipcode, String address, String cuisine, String budget, String phone, String website, String token) throws JSONException {
+		JSONObject restaurant = new JSONObject();
+		restaurant.put("name", name);
+		restaurant.put("zipcode", zipcode);
+		restaurant.put("address", address);
+		restaurant.put("cuisine", cuisine);
+		restaurant.put("budget", budget);
+		restaurant.put("phone", phone);
+		restaurant.put("website", website);
+		
+		Client client = ClientBuilder.newClient();
+		WebTarget baseTarget = client.target("http://localhost:8080/dindin/webapi/");
+		WebTarget restaurantsTarget = baseTarget.path("restaurants");
+		Response response = restaurantsTarget.request()/*.header("Authorization", AUTHORIZATION_HEADER_PREFIX + token)*/.post(Entity.entity(restaurant.toString(), MediaType.APPLICATION_JSON));
+		
+		if (response.getStatus() == Status.CREATED.getStatusCode()) {
+			return "Restaurant oprettet";
+		} else {
+			return "Fejl ved oprettelse!";
+		}
+	
+	}
+
+
+	@Override
+	public Object deleteRestaurant(int restaurantId, String token) {
+		Client client = ClientBuilder.newClient();
+		WebTarget baseTarget = client.target("http://localhost:8080/dindin/webapi/");
+		WebTarget restaurantsTarget = baseTarget.path("restaurants");
+		WebTarget singeRestTarget = restaurantsTarget.path("{restId}"); 
+		Response response = singeRestTarget.resolveTemplate("restId", restaurantId).request()/*.header("Authorization", AUTHORIZATION_HEADER_PREFIX + token)*/.delete();
+		
+		if (response.getStatus() == Status.NO_CONTENT.getStatusCode()) {
+			return "Restaurant med id "+restaurantId+" er slettet.";
+		} else {
+			return "Fejl ved sletning!";
+		}
+	}
+	
+	
+	
+	
+	
+
+	
+	
 }
 
