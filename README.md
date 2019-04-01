@@ -1,4 +1,4 @@
-# DINDIN-SOAP (Current not in operation)
+# DINDIN-SOAP (Currently not in operation)
 
 This SOAP API is developed for the DINDIN Angular Application. This API serves the DINDIN SOAP client and this part of the system has the responsibilty of providing a Back Office for administrators to add, get and alter data in the backend (e.g. for reporting). 
 
